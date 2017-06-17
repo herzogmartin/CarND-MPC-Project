@@ -11,9 +11,13 @@ All data is provided in a global coordinate system.
 The MPC controls steering angle and throttle to drive the car safely around the
 track.
 
-<iframe width="560" height="315" src="https://www.youtube.com/embed/QcmNCa6CQHM" frameborder="0" allowfullscreen></iframe>
+<p align="center">
+<a href="http://www.youtube.com/watch?feature=player_embedded&v=QcmNCa6CQHM
+" target="_blank"><img src="http://img.youtube.com/vi/QcmNCa6CQHM/0.jpg" 
+alt="MPC with delay" width="480" height="360"/></a>
+</p>
 
-# Vehicle Model in MPC
+### Vehicle Model in MPC
 The MPC uses as vehicle model a bicycle model. It is described by the following 
 equations in class `FG_eval`:
 
@@ -36,7 +40,7 @@ The variables have the following meaning:
 * `epsi`: heading error of the car'S orientation to the reference trajectory's orientation 
 * `Lf`: distance between front axle and center of gravity
  
-# MPC Preprocessing
+### MPC Preprocessing
 MPC is fed by data transformed to the vehicle coordinate system. This makes
 fitting of polynomial to waypoints of reference trajectory easier.
 The reference trajectory from the simulator is transformed to vehicle coordinates
@@ -63,7 +67,7 @@ Therefore, the initial state of the car for MPC is:
 state << 0.0,0.0,0.0,v,cte,epsi;
 ```
 
-# MPC algorithm (N & dt)
+### MPC algorithm (N & dt)
 The MPC solves a optimal control problem in every state provided by the simulator.
 The MPC trajectory is optimized for N timesteps in the future with a stepsize of dt.
 In the beginning `N` was set to `25`. But this was reduced to `10` to reduce computational 
@@ -98,7 +102,7 @@ speedLim = 1.2*viewRange/(MPC_N*(MPC_MAX_DT/1000.0));
 v_ref = std::max(std::min(100.0, speedLim), 65.0);
 ```
 
-# Delay of the actuators
+### Delay of the actuators
 The projet gets more difficult because the control of the actuators (throttle and 
 steering) is not performed immediately but with a delay of 100 ms. 
 This is delay is regarded in the MPC algorithm. For the time of the delay and in addition 
@@ -114,6 +118,8 @@ for (int i = delta_start; i < delta_start + latency_ind; i++) {
 ```
 
 For throttle it is done analog.
+
+---
 
 ## Dependencies
 
