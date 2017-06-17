@@ -1,7 +1,119 @@
-# CarND-Controls-MPC
-Self-Driving Car Engineer Nanodegree Program
+# Model Predictive Control (MPC) with actuator delay
+Project for Self-Driving Car Engineer Nanodegree Program 
 
 ---
+
+## Purpose of the MPC 
+The model predictive controler has the purpose to drive a car around a track
+in a simulator. The simulator provides the car position (x,y) and orientation.
+In addition the simulator provides a list of waypoints for the reference trajectory.
+All data is provided in a global coordinate system.
+The MPC controls steering angle and throttle to drive the car safely around the
+track.
+
+<iframe width="560" height="315" src="https://www.youtube.com/embed/QcmNCa6CQHM" frameborder="0" allowfullscreen></iframe>
+
+# Vehicle Model in MPC
+The MPC uses as vehicle model a bicycle model. It is described by the following 
+equations in class `FG_eval`:
+
+```
+ // x_[t] = x[t-1] + v[t-1] * cos(psi[t-1]) * dt 
+ // y_[t] = y[t-1] + v[t-1] * sin(psi[t-1]) * dt 
+ // psi_[t] = psi[t-1] + v[t-1] / Lf * delta[t-1] * dt 
+ // v_[t] = v[t-1] + a[t-1] * dt 
+ // cte[t] = f(x[t-1]) - y[t-1] + v[t-1] * sin(epsi[t-1]) * dt 
+ // epsi[t] = psi[t] - psides[t-1] + v[t-1] * delta[t-1] / Lf * dt 
+```
+
+The variables have the following meaning:
+
+* `x`: x-position of the car
+* `y`: y-position of the car
+* `psi`: orientation of the car
+* `v`: velocity of the car
+* `cte`: cross track error of the car to the reference trajectory
+* `epsi`: heading error of the car'S orientation to the reference trajectory's orientation 
+* `Lf`: distance between front axle and center of gravity
+ 
+# MPC Preprocessing
+MPC is fed by data transformed to the vehicle coordinate system. This makes
+fitting of polynomial to waypoints of reference trajectory easier.
+The reference trajectory from the simulator is transformed to vehicle coordinates
+in the following way:
+
+```
+const double cos_psi = cos(psi);
+const double sin_psi = sin(psi);
+for (int i=0; i < ptsx.size(); i++) {
+  ptsx_vcs[i] =  (ptsx[i] - px) * cos_psi + (ptsy[i] - py) * sin_psi;
+  ptsy_vcs[i] = -(ptsx[i] - px) * sin_psi + (ptsy[i] - py) * cos_psi;
+}
+``` 
+
+Here the car position described by its global x-position `px`, y-position `py` 
+and orientation `psi`. The waypoints of the reference trajectory is given by the 
+simulator in the global coordinates `ptsx` and `ptsy`. These waypoints are transfered
+to the vehicle coordinates `ptsx_vcs` and `ptsy_vcs`.
+
+
+Therefore, the initial state of the car for MPC is:
+
+```
+state << 0.0,0.0,0.0,v,cte,epsi;
+```
+
+# MPC algorithm (N & dt)
+The MPC solves a optimal control problem in every state provided by the simulator.
+The MPC trajectory is optimized for N timesteps in the future with a stepsize of dt.
+In the beginning `N` was set to `25`. But this was reduced to `10` to reduce computational 
+calculation time. `dt` is normally set to `100 ms`. So an optimal trajectory is 
+searched for a view range of `1 s`. Sometimes the view range of the reference trajectory
+is not long enough for the current velocity. Then `dt` is reduced to fit the MPC 
+trajectory to the waypoints view range.
+
+The view range of the reference trajectory is calculated in the following way:
+
+```
+double viewRange = 0.0;
+for (int i=1; i < ptsx_vcs.size(); i++) {
+  viewRange += std::sqrt(
+                    std::pow((ptsx_vcs[i]-ptsx_vcs[i-1]),2)
+                  + std::pow((ptsy_vcs[i]-ptsy_vcs[i-1]),2) );
+}
+```
+
+`dt` is calculated in the following way:
+
+```
+dt = std::min(MPC_MAX_DT/1000.0, (viewRange/v)/MPC_N);
+```
+
+In addition the target speed is reduced depending on the view range, but minimum 65 and maximum 100, 
+so that the distance traveled during the MPC horizon is not longer than 120% of 
+the view range of the reference trajectory:
+
+```
+speedLim = 1.2*viewRange/(MPC_N*(MPC_MAX_DT/1000.0));
+v_ref = std::max(std::min(100.0, speedLim), 65.0);
+```
+
+# Delay of the actuators
+The projet gets more difficult because the control of the actuators (throttle and 
+steering) is not performed immediately but with a delay of 100 ms. 
+This is delay is regarded in the MPC algorithm. For the time of the delay and in addition 
+for the calculation time of the MPC the actuator values throttle and steering 
+a fixed to the previous values for the delay time:
+
+```
+int latency_ind = std::lround((MPC_LATENCY+calcTime)/MPC_MAX_DT);
+for (int i = delta_start; i < delta_start + latency_ind; i++) {
+  vars_lowerbound[i] = delta_prev;
+  vars_upperbound[i] = delta_prev;
+}
+```
+
+For throttle it is done analog.
 
 ## Dependencies
 
@@ -50,66 +162,3 @@ Self-Driving Car Engineer Nanodegree Program
 3. Compile: `cmake .. && make`
 4. Run it: `./mpc`.
 
-## Tips
-
-1. It's recommended to test the MPC on basic examples to see if your implementation behaves as desired. One possible example
-is the vehicle starting offset of a straight line (reference). If the MPC implementation is correct, after some number of timesteps
-(not too many) it should find and track the reference line.
-2. The `lake_track_waypoints.csv` file has the waypoints of the lake track. You could use this to fit polynomials and points and see of how well your model tracks curve. NOTE: This file might be not completely in sync with the simulator so your solution should NOT depend on it.
-3. For visualization this C++ [matplotlib wrapper](https://github.com/lava/matplotlib-cpp) could be helpful.
-
-## Editor Settings
-
-We've purposefully kept editor configuration files out of this repo in order to
-keep it as simple and environment agnostic as possible. However, we recommend
-using the following settings:
-
-* indent using spaces
-* set tab width to 2 spaces (keeps the matrices in source code aligned)
-
-## Code Style
-
-Please (do your best to) stick to [Google's C++ style guide](https://google.github.io/styleguide/cppguide.html).
-
-## Project Instructions and Rubric
-
-Note: regardless of the changes you make, your project must be buildable using
-cmake and make!
-
-More information is only accessible by people who are already enrolled in Term 2
-of CarND. If you are enrolled, see [the project page](https://classroom.udacity.com/nanodegrees/nd013/parts/40f38239-66b6-46ec-ae68-03afd8a601c8/modules/f1820894-8322-4bb3-81aa-b26b3c6dcbaf/lessons/b1ff3be0-c904-438e-aad3-2b5379f0e0c3/concepts/1a2255a0-e23c-44cf-8d41-39b8a3c8264a)
-for instructions and the project rubric.
-
-## Hints!
-
-* You don't have to follow this directory structure, but if you do, your work
-  will span all of the .cpp files here. Keep an eye out for TODOs.
-
-## Call for IDE Profiles Pull Requests
-
-Help your fellow students!
-
-We decided to create Makefiles with cmake to keep this project as platform
-agnostic as possible. Similarly, we omitted IDE profiles in order to we ensure
-that students don't feel pressured to use one IDE or another.
-
-However! I'd love to help people get up and running with their IDEs of choice.
-If you've created a profile for an IDE that you think other students would
-appreciate, we'd love to have you add the requisite profile files and
-instructions to ide_profiles/. For example if you wanted to add a VS Code
-profile, you'd add:
-
-* /ide_profiles/vscode/.vscode
-* /ide_profiles/vscode/README.md
-
-The README should explain what the profile does, how to take advantage of it,
-and how to install it.
-
-Frankly, I've never been involved in a project with multiple IDE profiles
-before. I believe the best way to handle this would be to keep them out of the
-repo root to avoid clutter. My expectation is that most profiles will include
-instructions to copy files to a new location to get picked up by the IDE, but
-that's just a guess.
-
-One last note here: regardless of the IDE used, every submitted project must
-still be compilable with cmake and make./
