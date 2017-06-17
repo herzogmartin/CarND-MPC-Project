@@ -3,8 +3,8 @@ Project for Self-Driving Car Engineer Nanodegree Program
 
 ---
 
-## Purpose of the MPC 
-The model predictive controler has the purpose to drive a car around a track
+## Purpose of the Project 
+The model predictive controler has the purpose to drive a car's around a track
 in a simulator. The simulator provides the car position (x,y) and orientation.
 In addition the simulator provides a list of waypoints for the reference trajectory.
 All data is provided in a global coordinate system.
@@ -12,9 +12,7 @@ The MPC controls steering angle and throttle to drive the car safely around the
 track.
 
 <p align="center">
-<a href="http://www.youtube.com/watch?feature=player_embedded&v=QcmNCa6CQHM
-" target="_blank"><img src="http://img.youtube.com/vi/QcmNCa6CQHM/0.jpg" 
-alt="MPC with delay" width="480" height="360"/></a>
+<iframe width="560" height="315" src="https://www.youtube.com/embed/QcmNCa6CQHM" frameborder="0" allowfullscreen></iframe>
 </p>
 
 ### Vehicle Model in MPC
@@ -55,7 +53,7 @@ for (int i=0; i < ptsx.size(); i++) {
 }
 ``` 
 
-Here the car position described by its global x-position `px`, y-position `py` 
+Here the car position is described by its global x-position `px`, y-position `py` 
 and orientation `psi`. The waypoints of the reference trajectory is given by the 
 simulator in the global coordinates `ptsx` and `ptsy`. These waypoints are transfered
 to the vehicle coordinates `ptsx_vcs` and `ptsy_vcs`.
@@ -105,7 +103,7 @@ v_ref = std::max(std::min(100.0, speedLim), 65.0);
 ### Delay of the actuators
 The projet gets more difficult because the control of the actuators (throttle and 
 steering) is not performed immediately but with a delay of 100 ms. 
-This is delay is regarded in the MPC algorithm. For the time of the delay and in addition 
+This delay is regarded in the MPC algorithm. For the time of the delay and in addition 
 for the calculation time of the MPC the actuator values throttle and steering 
 a fixed to the previous values for the delay time:
 
