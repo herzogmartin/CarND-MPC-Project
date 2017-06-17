@@ -4,16 +4,14 @@ Project for Self-Driving Car Engineer Nanodegree Program
 ---
 
 ## Purpose of the Project 
-The model predictive controler has the purpose to drive a car's around a track
-in a simulator. The simulator provides the car position (x,y) and orientation.
+The model predictive controler has the purpose to drive a car around a track
+in a simulator. The simulator provides the car's position (x,y) and orientation.
 In addition the simulator provides a list of waypoints for the reference trajectory.
 All data is provided in a global coordinate system.
 The MPC controls steering angle and throttle to drive the car safely around the
 track.
 
-<p align="center">
-<iframe width="560" height="315" src="https://www.youtube.com/embed/QcmNCa6CQHM" frameborder="0" allowfullscreen></iframe>
-</p>
+[![MPC with delay](http://img.youtube.com/vi/QcmNCa6CQHM/0.jpg)](http://www.youtube.com/watch?v=QcmNCa6CQHM "CarND MPC Project")
 
 ### Vehicle Model in MPC
 The MPC uses as vehicle model a bicycle model. It is described by the following 
